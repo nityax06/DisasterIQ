@@ -1,19 +1,24 @@
+import IncidentTable from "./components/IncidentTable";
+import StatCard from "./components/StatCard";
+
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
-      <h1 className="text-5xl font-bold mb-4">
+    <main className="min-h-screen bg-slate-950 text-white p-8">
+      <h1 className="text-5xl font-bold mb-2">
         DisasterIQ
       </h1>
 
-      <p className="text-xl mb-8">
+      <p className="text-slate-400 mb-10">
         AI-Powered Disaster Response Platform
       </p>
 
-      <div className="bg-slate-800 p-6 rounded-xl shadow-lg w-96">
-        <p className="mb-2">🌍 Active Disasters: 3</p>
-        <p className="mb-2">📦 Resources Available: 5200</p>
-        <p className="mb-2">👥 Volunteers: 47</p>
+      <div className="grid grid-cols-4 gap-6">
+        <StatCard title="Active Disasters" value="3" />
+        <StatCard title="Resources" value="5200" />
+        <StatCard title="Volunteers" value="47" />
+        <StatCard title="Relief Centers" value="12" />
       </div>
+      <IncidentTable />
     </main>
   );
 }
