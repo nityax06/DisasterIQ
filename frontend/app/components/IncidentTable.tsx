@@ -1,3 +1,4 @@
+import SeverityBadge from "./SeverityBadge";
 import { incidents } from "../incidents";
 import { calculatePriorityScore } from "../priority";
 
@@ -43,7 +44,9 @@ export default function IncidentTable() {
               <tr key={incident.id} className="border-b border-slate-700">
                 <td className="py-3">{incident.type}</td>
                 <td className="py-3">{incident.location}</td>
-                <td className="py-3">{incident.severity}</td>
+                <td className="py-3">
+                  <SeverityBadge severity={incident.severity} />
+                </td>
                 <td className="py-3 font-bold">{score}</td>
               </tr>
             );
