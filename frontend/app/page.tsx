@@ -1,3 +1,4 @@
+import AlertBanner from "./components/AlertBanner";
 import ResourcePanel from "./components/ResourcePanel";
 import IncidentTable from "./components/IncidentTable";
 import StatCard from "./components/StatCard";
@@ -19,6 +20,7 @@ export default function Home() {
         <StatCard title="Volunteers" value="47" />
         <StatCard title="Relief Centers" value="12" />
       </div>
+      <AlertBanner />
       <IncidentTable />
       <ResourcePanel />
     </main>
