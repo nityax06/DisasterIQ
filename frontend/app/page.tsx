@@ -1,3 +1,4 @@
+import ResourcePanel from "./components/ResourcePanel";
 import IncidentTable from "./components/IncidentTable";
 import StatCard from "./components/StatCard";
 
@@ -19,6 +20,7 @@ export default function Home() {
         <StatCard title="Relief Centers" value="12" />
       </div>
       <IncidentTable />
+      <ResourcePanel />
     </main>
   );
 }
