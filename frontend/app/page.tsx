@@ -1,3 +1,4 @@
+import RecommendationPanel from "./components/RecommendationPanel";
 import AlertBanner from "./components/AlertBanner";
 import ResourcePanel from "./components/ResourcePanel";
 import IncidentTable from "./components/IncidentTable";
@@ -22,6 +23,7 @@ export default function Home() {
       </div>
       <AlertBanner />
       <IncidentTable />
+      <RecommendationPanel />
       <ResourcePanel />
     </main>
   );
