@@ -21,6 +21,10 @@ export default function IncidentForm({ setIncidents }: IncidentFormProps) {
   const [population, setPopulation] = useState("");
   const [casualties, setCasualties] = useState("");
 function handleSubmit() {
+  if (!type || !location || !severity || !population || !casualties) {
+    alert("Please fill all fields before submitting.");
+    return;
+  }
   const newIncident = {
     type,
     location,
