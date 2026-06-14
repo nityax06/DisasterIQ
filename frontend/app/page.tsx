@@ -1,3 +1,4 @@
+import IncidentForm from "./components/IncidentForm";
 import RecommendationPanel from "./components/RecommendationPanel";
 import AlertBanner from "./components/AlertBanner";
 import ResourcePanel from "./components/ResourcePanel";
@@ -22,6 +23,7 @@ export default function Home() {
         <StatCard title="Relief Centers" value="12" />
       </div>
       <AlertBanner />
+      <IncidentForm />
       <IncidentTable />
       <RecommendationPanel />
       <ResourcePanel />
