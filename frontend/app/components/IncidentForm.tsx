@@ -1,8 +1,20 @@
 "use client";
-
 import { useState } from "react";
 
-export default function IncidentForm() {
+type Incident = {
+  id: number;
+  type: string;
+  location: string;
+  severity: string;
+  population: number;
+  casualties: number;
+};
+
+type IncidentFormProps = {
+  setIncidents: React.Dispatch<React.SetStateAction<Incident[]>>;
+};
+
+export default function IncidentForm({ setIncidents }: IncidentFormProps) {
   const [type, setType] = useState("");
   const [location, setLocation] = useState("");
   const [severity, setSeverity] = useState("");
@@ -16,6 +28,14 @@ function handleSubmit() {
     population: Number(population),
     casualties: Number(casualties),
   };
+
+  setIncidents((previousIncidents) => [
+    ...previousIncidents,
+    {
+      id: Date.now(),
+      ...newIncident,
+    },
+  ]);
 
   console.log(newIncident);
 }

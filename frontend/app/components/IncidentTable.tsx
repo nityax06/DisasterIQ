@@ -1,9 +1,21 @@
 import SeverityBadge from "./SeverityBadge";
-import { incidentStore } from "../data/incidentStore";
 import { calculatePriorityScore } from "../priority";
 
-export default function IncidentTable() {
-    const sortedIncidents = [...incidentStore].sort((a, b) => {
+type Incident = {
+  id: number;
+  type: string;
+  location: string;
+  severity: string;
+  population: number;
+  casualties: number;
+};
+
+type IncidentTableProps = {
+  incidents: Incident[];
+};
+
+export default function IncidentTable({ incidents }: IncidentTableProps) {
+    const sortedIncidents = [...incidents].sort((a, b) => {
   const scoreA = calculatePriorityScore(
     a.severity,
     a.population,

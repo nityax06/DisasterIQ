@@ -1,8 +1,18 @@
-import { incidents } from "../incidents";
 import { calculatePriorityScore } from "../priority";
 import { getRecommendations } from "../recommendations";
+type Incident = {
+  id: number;
+  type: string;
+  location: string;
+  severity: string;
+  population: number;
+  casualties: number;
+};
 
-export default function RecommendationPanel() {
+type RecommendationPanelProps = {
+  incidents: Incident[];
+};
+export default function RecommendationPanel({ incidents }: RecommendationPanelProps) {
   const highestPriorityIncident = [...incidents].sort((a, b) => {
     const scoreA = calculatePriorityScore(a.severity, a.population, a.casualties);
     const scoreB = calculatePriorityScore(b.severity, b.population, b.casualties);

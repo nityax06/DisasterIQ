@@ -1,3 +1,6 @@
+"use client";
+import { useState } from "react";
+import { incidentStore } from "./data/incidentStore";
 import IncidentForm from "./components/IncidentForm";
 import RecommendationPanel from "./components/RecommendationPanel";
 import AlertBanner from "./components/AlertBanner";
@@ -6,6 +9,7 @@ import IncidentTable from "./components/IncidentTable";
 import StatCard from "./components/StatCard";
 
 export default function Home() {
+  const [incidents, setIncidents] = useState(incidentStore);
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
       <h1 className="text-5xl font-bold mb-2">
@@ -17,15 +21,18 @@ export default function Home() {
       </p>
       <AlertBanner />
       <div className="grid grid-cols-4 gap-6">
-        <StatCard title="Active Disasters" value="3" />
+        <StatCard 
+          title="Active Disasters" 
+          value={incidents.length.toString()}
+         />
         <StatCard title="Resources" value="5200" />
         <StatCard title="Volunteers" value="47" />
         <StatCard title="Relief Centers" value="12" />
       </div>
       
-      <IncidentForm />
-      <IncidentTable />
-      <RecommendationPanel />
+      <IncidentForm setIncidents={setIncidents} />
+      <IncidentTable incidents={incidents} />
+      <RecommendationPanel incidents={incidents} />
       <ResourcePanel />
     </main>
   );
