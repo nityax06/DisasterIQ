@@ -62,12 +62,17 @@ function handleSubmit() {
             value={location}
             onChange={(event) => setLocation(event.target.value)}
         />
-        <input 
-            className="bg-slate-900 p-3 rounded" 
-            placeholder="Severity" 
+        <select
+            className="bg-slate-900 p-3 rounded"
             value={severity}
             onChange={(event) => setSeverity(event.target.value)}
-        />
+          >
+            <option value="">Select Severity</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+        </select>
         <input 
             className="bg-slate-900 p-3 rounded" 
             placeholder="Population Affected" 
