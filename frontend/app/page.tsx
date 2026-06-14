@@ -15,14 +15,14 @@ export default function Home() {
       <p className="text-slate-400 mb-10">
         AI-Powered Disaster Response Platform
       </p>
-
+      <AlertBanner />
       <div className="grid grid-cols-4 gap-6">
         <StatCard title="Active Disasters" value="3" />
         <StatCard title="Resources" value="5200" />
         <StatCard title="Volunteers" value="47" />
         <StatCard title="Relief Centers" value="12" />
       </div>
-      <AlertBanner />
+      
       <IncidentForm />
       <IncidentTable />
       <RecommendationPanel />
