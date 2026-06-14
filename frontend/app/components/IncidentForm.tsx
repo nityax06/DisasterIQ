@@ -38,6 +38,11 @@ function handleSubmit() {
   ]);
 
   console.log(newIncident);
+  setType("");
+  setLocation("");
+  setSeverity("");
+  setPopulation("");
+  setCasualties("");
 }
   return (
     <div className="mt-10 bg-slate-800 rounded-xl p-6">
