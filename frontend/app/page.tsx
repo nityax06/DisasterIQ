@@ -31,7 +31,10 @@ export default function Home() {
       </div>
       
       <IncidentForm setIncidents={setIncidents} />
-      <IncidentTable incidents={incidents} />
+      <IncidentTable
+        incidents={incidents}
+        setIncidents={setIncidents}
+      />
       <RecommendationPanel incidents={incidents} />
       <ResourcePanel />
     </main>
