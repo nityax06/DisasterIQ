@@ -1,5 +1,5 @@
 "use client";
-
+import RoutePanel from "./components/RoutePanel";
 import { useState } from "react";
 import { incidentStore } from "./data/incidentStore";
 
@@ -42,6 +42,7 @@ export default function Home() {
       </div>
 
       <ReliefCenterPanel incidents={incidents} />
+      <RoutePanel />
 
       <ResourcePanel />
     </main>
