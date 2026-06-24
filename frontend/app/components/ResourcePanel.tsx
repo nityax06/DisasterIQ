@@ -1,18 +1,30 @@
+"use client";
+
+import { useState } from "react";
 import { resources } from "../resources";
+import { PackagePlus } from "lucide-react";
 
 export default function ResourcePanel() {
+  const [requested, setRequested] = useState<string[]>([]);
+
+  function requestRefill(resourceName: string) {
+    if (!requested.includes(resourceName)) {
+      setRequested([...requested, resourceName]);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold">Resource Summary</h2>
           <p className="text-xs text-slate-500">
-            Live comparison between available and required resources.
+            Monitor shortages and request emergency refill.
           </p>
         </div>
 
         <span className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-slate-400">
-          {resources.length} resource types
+          {requested.length} requested
         </span>
       </div>
 
@@ -25,6 +37,7 @@ export default function ResourcePanel() {
               <th className="px-3 py-2 font-medium">Required</th>
               <th className="px-3 py-2 font-medium">Gap</th>
               <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Action</th>
             </tr>
           </thead>
 
@@ -32,12 +45,12 @@ export default function ResourcePanel() {
             {resources.map((resource) => {
               const gap = resource.required - resource.available;
               const shortage = gap > 0;
+              const isRequested = requested.includes(resource.name);
 
               return (
                 <tr
                   key={resource.id}
                   className="border-t border-white/10 transition hover:bg-white/[0.04]"
-                  title={`${resource.name}: ${shortage ? "Shortage" : "Sufficient"}`}
                 >
                   <td className="px-3 py-2 font-medium">
                     {resource.name}
@@ -69,6 +82,23 @@ export default function ResourcePanel() {
                     >
                       {shortage ? "Shortage" : "Stable"}
                     </span>
+                  </td>
+
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => requestRefill(resource.name)}
+                      disabled={!shortage || isRequested}
+                      className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] transition ${
+                        isRequested
+                          ? "border-green-500/20 bg-green-500/10 text-green-300"
+                          : shortage
+                          ? "border-blue-500/20 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20"
+                          : "border-white/10 bg-white/[0.03] text-slate-500 cursor-not-allowed"
+                      }`}
+                    >
+                      <PackagePlus className="h-3.5 w-3.5" />
+                      {isRequested ? "Requested" : "Request"}
+                    </button>
                   </td>
                 </tr>
               );
