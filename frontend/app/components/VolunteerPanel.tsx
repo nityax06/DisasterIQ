@@ -1,7 +1,5 @@
-import {
-  volunteerTeams,
-  assignVolunteerTeams,
-} from "../volunteers";
+import { Users, Info } from "lucide-react";
+import { assignVolunteerTeams } from "../volunteers";
 
 type Incident = {
   id: number;
@@ -21,82 +19,69 @@ export default function VolunteerPanel({
 }: VolunteerPanelProps) {
   if (incidents.length === 0) {
     return (
-      <div className="mt-10 bg-slate-800 rounded-xl p-6">
-        <h2 className="text-2xl font-bold mb-4">
-          Volunteer Deployment
-        </h2>
-
-        <p className="text-slate-400">
-          No active incidents.
-        </p>
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <h2 className="text-sm font-semibold">Volunteer Deployment</h2>
+        <p className="mt-2 text-xs text-slate-500">No active incidents.</p>
       </div>
     );
   }
 
-  const highestPriorityIncident = [...incidents].sort(
+  const incident = [...incidents].sort(
     (a, b) => b.casualties - a.casualties
   )[0];
 
   const requiredVolunteers = Math.max(
     10,
-    Math.round(
-      highestPriorityIncident.population * 0.02 +
-      highestPriorityIncident.casualties * 5
-    )
+    Math.round(incident.population * 0.02 + incident.casualties * 5)
   );
 
-  const assignedTeams =
-    assignVolunteerTeams(requiredVolunteers);
+  const assignedTeams = assignVolunteerTeams(requiredVolunteers);
+  const assignedTotal = assignedTeams.reduce(
+    (sum, team) => sum + team.members,
+    0
+  );
 
   return (
-    <div className="mt-10 bg-slate-800 rounded-xl p-6">
-      <h2 className="text-2xl font-bold mb-4">
-        Volunteer Deployment
-      </h2>
+    <div className="group relative rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-green-500/40 hover:bg-white/[0.05] hover:shadow-[0_0_30px_rgba(34,197,94,0.12)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-green-300" />
+          <h2 className="text-sm font-semibold">Volunteer Deployment</h2>
+        </div>
 
-      <p className="text-slate-400 mb-2">
-        Incident
+        <Info className="h-4 w-4 text-slate-500 transition group-hover:text-green-300" />
+      </div>
+
+      <p className="text-[11px] text-slate-500">Incident</p>
+      <p className="mb-3 text-sm font-medium">
+        {incident.type} · {incident.location}
       </p>
 
-      <p className="text-xl font-bold mb-4">
-        {highestPriorityIncident.type} -
-        {" "}
-        {highestPriorityIncident.location}
-      </p>
-
-      <p className="mb-4">
-        Required Volunteers:
-        {" "}
-        <span className="font-bold">
-          {requiredVolunteers}
+      <div className="mb-3 flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+        <span className="text-[11px] text-slate-500">Assigned / Required</span>
+        <span className="text-sm font-semibold text-green-300">
+          {assignedTotal}/{requiredVolunteers}
         </span>
-      </p>
+      </div>
 
-      <table className="w-full text-left">
-        <thead>
-          <tr className="text-slate-400 border-b border-slate-700">
-            <th className="pb-3">Assigned Team</th>
-            <th className="pb-3">Members</th>
-          </tr>
-        </thead>
+      <div className="space-y-2">
+        {assignedTeams.map((team) => (
+          <div
+            key={team.id}
+            className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs transition hover:border-green-500/30"
+          >
+            <span>{team.name}</span>
+            <span className="font-semibold text-white">
+              {team.members}
+            </span>
+          </div>
+        ))}
+      </div>
 
-        <tbody>
-          {assignedTeams.map((team) => (
-            <tr
-              key={team.id}
-              className="border-b border-slate-700"
-            >
-              <td className="py-3">
-                {team.name}
-              </td>
-
-              <td className="py-3">
-                {team.members}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="pointer-events-none absolute right-4 top-12 z-50 hidden w-64 rounded-lg border border-white/10 bg-[#0f172a] p-3 text-[11px] leading-5 text-slate-300 shadow-xl group-hover:block">
+        Estimates required volunteers from affected population and casualty
+        count, then assigns available response teams.
+      </div>
     </div>
   );
 }

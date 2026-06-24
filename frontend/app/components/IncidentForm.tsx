@@ -17,6 +17,9 @@ type IncidentFormProps = {
   setIncidents: React.Dispatch<React.SetStateAction<Incident[]>>;
 };
 
+const inputClass =
+  "rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500/60 focus:bg-black/50";
+
 export default function IncidentForm({
   incidents,
   setIncidents,
@@ -64,30 +67,41 @@ export default function IncidentForm({
   }
 
   return (
-    <div className="mt-10 bg-slate-800 rounded-xl p-6">
-      <h2 className="text-2xl font-bold mb-4">Report New Incident</h2>
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold">Report New Incident</h2>
+          <p className="text-xs text-slate-500">
+            Create a live disaster record in Supabase.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-2 gap-4">
+        <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[11px] text-blue-300">
+          Database Write
+        </span>
+      </div>
+
+      <div className="grid grid-cols-6 gap-3">
         <input
-          className="bg-slate-900 p-3 rounded"
-          placeholder="Incident Type"
+          className={inputClass}
+          placeholder="Type"
           value={type}
           onChange={(event) => setType(event.target.value)}
         />
 
         <input
-          className="bg-slate-900 p-3 rounded"
+          className={inputClass}
           placeholder="Location"
           value={location}
           onChange={(event) => setLocation(event.target.value)}
         />
 
         <select
-          className="bg-slate-900 p-3 rounded"
+          className={inputClass}
           value={severity}
           onChange={(event) => setSeverity(event.target.value)}
         >
-          <option value="">Select Severity</option>
+          <option value="">Severity</option>
           <option value="Low">Low</option>
           <option value="Medium">Medium</option>
           <option value="High">High</option>
@@ -95,14 +109,14 @@ export default function IncidentForm({
         </select>
 
         <input
-          className="bg-slate-900 p-3 rounded"
-          placeholder="Population Affected"
+          className={inputClass}
+          placeholder="Population"
           value={population}
           onChange={(event) => setPopulation(event.target.value)}
         />
 
         <input
-          className="bg-slate-900 p-3 rounded"
+          className={inputClass}
           placeholder="Casualties"
           value={casualties}
           onChange={(event) => setCasualties(event.target.value)}
@@ -110,9 +124,10 @@ export default function IncidentForm({
 
         <button
           onClick={handleSubmit}
-          className="bg-blue-600 rounded p-3 font-bold"
+          className="rounded-lg border border-blue-400/30 bg-blue-500/90 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20"
+          title="Save this incident to Supabase"
         >
-          Submit Incident
+          Submit
         </button>
       </div>
     </div>

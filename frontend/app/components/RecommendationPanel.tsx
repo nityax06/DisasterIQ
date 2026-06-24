@@ -1,3 +1,4 @@
+import { PackageCheck, Info } from "lucide-react";
 import { calculatePriorityScore } from "../priority";
 import { calculateAllocation } from "../allocation";
 
@@ -17,63 +18,88 @@ type RecommendationPanelProps = {
 export default function RecommendationPanel({
   incidents,
 }: RecommendationPanelProps) {
-  const highestPriorityIncident = [...incidents].sort((a, b) => {
-    const scoreA = calculatePriorityScore(a.severity, a.population, a.casualties);
-    const scoreB = calculatePriorityScore(b.severity, b.population, b.casualties);
+  const incident = [...incidents].sort((a, b) => {
+    const scoreA = calculatePriorityScore(
+      a.severity,
+      a.population,
+      a.casualties
+    );
+    const scoreB = calculatePriorityScore(
+      b.severity,
+      b.population,
+      b.casualties
+    );
 
     return scoreB - scoreA;
   })[0];
 
-  if (!highestPriorityIncident) {
+  if (!incident) {
     return (
-      <div className="mt-10 bg-slate-800 rounded-xl p-6">
-        <h2 className="text-2xl font-bold mb-4">Resource Allocation</h2>
-        <p className="text-slate-400">No active incidents.</p>
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <h2 className="text-sm font-semibold">Resource Allocation</h2>
+        <p className="mt-2 text-xs text-slate-500">No active incidents.</p>
       </div>
     );
   }
 
   const priorityScore = calculatePriorityScore(
-    highestPriorityIncident.severity,
-    highestPriorityIncident.population,
-    highestPriorityIncident.casualties
+    incident.severity,
+    incident.population,
+    incident.casualties
   );
 
   const allocation = calculateAllocation(
-    highestPriorityIncident.severity,
-    highestPriorityIncident.population,
-    highestPriorityIncident.casualties
+    incident.severity,
+    incident.population,
+    incident.casualties
   );
 
+  console.log("Incident:", incident);
+  console.log("Allocation:", allocation);
+
   return (
-    <div className="mt-10 bg-slate-800 rounded-xl p-6">
-      <h2 className="text-2xl font-bold mb-4">Resource Allocation Engine</h2>
+    <div className="group relative rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-blue-500/40 hover:bg-white/[0.05] hover:shadow-[0_0_30px_rgba(59,130,246,0.12)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <PackageCheck className="h-4 w-4 text-blue-300" />
+          <h2 className="text-sm font-semibold">Resource Allocation</h2>
+        </div>
 
-      <p className="text-slate-400 mb-2">Highest Priority Incident</p>
+        <Info className="h-4 w-4 text-slate-500 transition group-hover:text-blue-300" />
+      </div>
 
-      <p className="text-xl font-bold mb-4">
-        {highestPriorityIncident.type} - {highestPriorityIncident.location}
+      <p className="text-[11px] text-slate-500">Highest Priority</p>
+      <p className="mb-3 text-sm font-medium">
+        {incident.type} · {incident.location}
       </p>
 
-      <p className="text-slate-400 mb-4">
-        Priority Score: <span className="font-bold text-white">{priorityScore}</span>
-      </p>
+      <div className="mb-3 flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+        <span className="text-[11px] text-slate-500">Priority Score</span>
+        <span className="text-sm font-semibold text-blue-300">
+          {priorityScore}
+        </span>
+      </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-slate-900 p-4 rounded-lg">
-          <p className="text-slate-400">Medical Kits</p>
-          <p className="text-3xl font-bold">{allocation.medicalKits}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg border border-white/10 bg-black/30 p-3 transition hover:border-blue-500/30">
+          <p className="text-[11px] text-slate-500">Medical</p>
+          <p className="text-lg font-semibold">{allocation.medicalKits}</p>
         </div>
 
-        <div className="bg-slate-900 p-4 rounded-lg">
-          <p className="text-slate-400">Volunteers</p>
-          <p className="text-3xl font-bold">{allocation.volunteers}</p>
+        <div className="rounded-lg border border-white/10 bg-black/30 p-3 transition hover:border-green-500/30">
+          <p className="text-[11px] text-slate-500">Volunteers</p>
+          <p className="text-lg font-semibold">{allocation.volunteers}</p>
         </div>
 
-        <div className="bg-slate-900 p-4 rounded-lg">
-          <p className="text-slate-400">Rescue Boats</p>
-          <p className="text-3xl font-bold">{allocation.rescueBoats}</p>
+        <div className="rounded-lg border border-white/10 bg-black/30 p-3 transition hover:border-purple-500/30">
+          <p className="text-[11px] text-slate-500">Boats</p>
+          <p className="text-lg font-semibold">{allocation.rescueBoats}</p>
         </div>
+      </div>
+
+      <div className="pointer-events-none absolute right-4 top-12 z-50 hidden w-64 rounded-lg border border-white/10 bg-[#0f172a] p-3 text-[11px] leading-5 text-slate-300 shadow-xl group-hover:block">
+        Calculates medical kits, volunteer count, and rescue boats using
+        severity, affected population, and casualties.
       </div>
     </div>
   );
