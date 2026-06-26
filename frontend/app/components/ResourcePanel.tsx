@@ -8,6 +8,8 @@ function getShortageLevel(gap: number) {
   if (gap <= 0) {
     return {
       label: "Stable",
+      priority: "Low",
+      eta: "Ready",
       color: "text-green-300",
       bg: "bg-green-500/10",
       border: "border-green-500/30",
@@ -17,6 +19,8 @@ function getShortageLevel(gap: number) {
   if (gap < 500) {
     return {
       label: "Minor",
+      priority: "Medium",
+      eta: "45 min",
       color: "text-yellow-300",
       bg: "bg-yellow-500/10",
       border: "border-yellow-500/30",
@@ -26,6 +30,8 @@ function getShortageLevel(gap: number) {
   if (gap < 1500) {
     return {
       label: "Severe",
+      priority: "High",
+      eta: "30 min",
       color: "text-orange-300",
       bg: "bg-orange-500/10",
       border: "border-orange-500/30",
@@ -34,6 +40,8 @@ function getShortageLevel(gap: number) {
 
   return {
     label: "Critical",
+    priority: "Urgent",
+    eta: "15 min",
     color: "text-red-300",
     bg: "bg-red-500/10",
     border: "border-red-500/30",
@@ -50,12 +58,12 @@ export default function ResourcePanel() {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.045]">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold">Resource Summary</h2>
           <p className="text-xs text-slate-500">
-            Monitor shortages, utilization and emergency refill requests.
+            Monitor shortage severity, refill priority, utilization and ETA.
           </p>
         </div>
 
@@ -64,8 +72,8 @@ export default function ResourcePanel() {
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-white/10">
-        <table className="w-full text-left text-xs">
+      <div className="overflow-x-auto rounded-lg border border-white/10">
+        <table className="min-w-[980px] w-full text-left text-xs">
           <thead className="bg-white/[0.03] text-slate-400">
             <tr>
               <th className="px-3 py-2 font-medium">Resource</th>
@@ -74,6 +82,8 @@ export default function ResourcePanel() {
               <th className="px-3 py-2 font-medium">Required</th>
               <th className="px-3 py-2 font-medium">Gap</th>
               <th className="px-3 py-2 font-medium">Severity</th>
+              <th className="px-3 py-2 font-medium">Priority</th>
+              <th className="px-3 py-2 font-medium">ETA</th>
               <th className="px-3 py-2 font-medium">Action</th>
             </tr>
           </thead>
@@ -93,7 +103,7 @@ export default function ResourcePanel() {
               return (
                 <tr
                   key={resource.id}
-                  className="border-t border-white/10 transition hover:bg-white/[0.04]"
+                  className="border-t border-white/10 transition hover:bg-blue-500/[0.06]"
                 >
                   <td className="px-3 py-2 font-medium">
                     {resource.name}
@@ -101,7 +111,7 @@ export default function ResourcePanel() {
 
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
                         <div
                           className={`h-1.5 rounded-full ${
                             utilization < 40
@@ -144,11 +154,19 @@ export default function ResourcePanel() {
                     </span>
                   </td>
 
+                  <td className="px-3 py-2 text-slate-300">
+                    {level.priority}
+                  </td>
+
+                  <td className="px-3 py-2 text-slate-300">
+                    {level.eta}
+                  </td>
+
                   <td className="px-3 py-2">
                     <button
                       onClick={() => requestRefill(resource.name)}
                       disabled={!shortage || isRequested}
-                      className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] transition ${
+                      className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] transition hover:-translate-y-0.5 ${
                         isRequested
                           ? "border-green-500/20 bg-green-500/10 text-green-300"
                           : shortage

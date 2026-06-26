@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SeverityBadge from "./SeverityBadge";
 import { calculatePriorityScore } from "../priority";
 import { calculateAllocation } from "../allocation";
 import { reliefCenters } from "../reliefCenters";
 import { findShortestRoute } from "../routes";
 import { supabase } from "../supabaseClient";
+import { showToast } from "./ToastHost";
 import {
   Filter,
   Search,
@@ -16,6 +17,7 @@ import {
   Trash2,
   Brain,
   Clock3,
+  AlertTriangle,
 } from "lucide-react";
 
 type Incident = {
@@ -43,10 +45,50 @@ export default function IncidentTable({
   const [search, setSearch] = useState("");
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
+  const [deleteIncident, setDeleteIncident] = useState<Incident | null>(null);
+  const [incidentStatuses, setIncidentStatuses] = useState<Record<number, string>>({});
+
+  const [editType, setEditType] = useState("");
+  const [editLocation, setEditLocation] = useState("");
   const [editSeverity, setEditSeverity] = useState("");
   const [editPopulation, setEditPopulation] = useState("");
   const [editCasualties, setEditCasualties] = useState("");
-  const [incidentStatuses, setIncidentStatuses] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    const saved = localStorage.getItem("disasteriq-incident-statuses");
+    if (saved) {
+      setIncidentStatuses(JSON.parse(saved));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "disasteriq-incident-statuses",
+      JSON.stringify(incidentStatuses)
+    );
+  }, [incidentStatuses]);
+
+  function highlight(text: string) {
+    if (!search.trim()) return text;
+
+    const lower = text.toLowerCase();
+    const query = search.toLowerCase();
+
+    if (!lower.includes(query)) return text;
+
+    const start = lower.indexOf(query);
+    const end = start + query.length;
+
+    return (
+      <>
+        {text.slice(0, start)}
+        <span className="rounded bg-yellow-400/20 px-1 text-yellow-200">
+          {text.slice(start, end)}
+        </span>
+        {text.slice(end)}
+      </>
+    );
+  }
 
   const filteredIncidents = incidents.filter((incident) => {
     const matchesSeverity =
@@ -55,7 +97,8 @@ export default function IncidentTable({
 
     const matchesSearch =
       incident.type.toLowerCase().includes(search.toLowerCase()) ||
-      incident.location.toLowerCase().includes(search.toLowerCase());
+      incident.location.toLowerCase().includes(search.toLowerCase()) ||
+      incident.severity.toLowerCase().includes(search.toLowerCase());
 
     return matchesSeverity && matchesSearch;
   });
@@ -75,10 +118,21 @@ export default function IncidentTable({
       ...previous,
       [id]: status,
     }));
+
+    showToast(`Incident status changed to ${status}`);
+  }
+
+  function statusClass(status: string) {
+    if (status === "Resolved") return "border-green-500/30 bg-green-500/10 text-green-300";
+    if (status === "Responding") return "border-blue-500/30 bg-blue-500/10 text-blue-300";
+    if (status === "Investigating") return "border-yellow-500/30 bg-yellow-500/10 text-yellow-300";
+    return "border-slate-500/30 bg-slate-500/10 text-slate-300";
   }
 
   function openEditModal(incident: Incident) {
     setEditingIncident(incident);
+    setEditType(incident.type);
+    setEditLocation(incident.location);
     setEditSeverity(incident.severity);
     setEditPopulation(incident.population.toString());
     setEditCasualties(incident.casualties.toString());
@@ -86,6 +140,8 @@ export default function IncidentTable({
 
   function closeEditModal() {
     setEditingIncident(null);
+    setEditType("");
+    setEditLocation("");
     setEditSeverity("");
     setEditPopulation("");
     setEditCasualties("");
@@ -94,7 +150,14 @@ export default function IncidentTable({
   async function handleSaveEdit() {
     if (!editingIncident) return;
 
+    if (!editType || !editLocation || !editSeverity || !editPopulation || !editCasualties) {
+      showToast("Please fill all fields");
+      return;
+    }
+
     const updatedIncident = {
+      type: editType,
+      location: editLocation,
       severity: editSeverity,
       population: Number(editPopulation),
       casualties: Number(editCasualties),
@@ -106,39 +169,43 @@ export default function IncidentTable({
       .eq("id", editingIncident.id);
 
     if (error) {
-      alert("Could not update incident in database.");
+      showToast("Could not update incident");
       return;
     }
 
     setIncidents((previousIncidents) =>
       previousIncidents.map((item) =>
-        item.id === editingIncident.id
-          ? { ...item, ...updatedIncident }
-          : item
+        item.id === editingIncident.id ? { ...item, ...updatedIncident } : item
       )
     );
 
+    showToast("Incident updated successfully");
     closeEditModal();
   }
 
-  async function handleDelete(id: number) {
+  async function confirmDelete() {
+    if (!deleteIncident) return;
+
     const { error } = await supabase
       .from("incidents")
       .delete()
-      .eq("id", id);
+      .eq("id", deleteIncident.id);
 
     if (error) {
-      alert("Could not delete incident from database.");
+      showToast("Could not delete incident");
       return;
     }
 
     setIncidents((previousIncidents) =>
-      previousIncidents.filter((item) => item.id !== id)
+      previousIncidents.filter((item) => item.id !== deleteIncident.id)
     );
 
-    if (selectedIncident?.id === id) {
+    if (selectedIncident?.id === deleteIncident.id) {
       setSelectedIncident(null);
     }
+
+    showToast("Incident deleted");
+    setDeleteIncident(null);
   }
 
   function getIncidentDetails(incident: Incident) {
@@ -164,8 +231,8 @@ export default function IncidentTable({
         : incident.location === "Gurgaon"
         ? findShortestRoute("Delhi Relief Center", "Gurgaon")
         : {
-            path: ["Delhi Relief Center", incident.location],
-            distance: "Unknown",
+            path: ["Nearest Relief Center", incident.location],
+            distance: "Estimated",
           };
 
     return { score, allocation, center, route };
@@ -173,12 +240,12 @@ export default function IncidentTable({
 
   return (
     <>
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.045]">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold">Incident Command Table</h2>
             <p className="text-xs text-slate-500">
-              Search, filter, inspect, update status, edit and delete incidents.
+              Search highlights matches, filters incidents, and saves workflow status.
             </p>
           </div>
 
@@ -188,12 +255,12 @@ export default function IncidentTable({
         </div>
 
         <div className="mb-3 grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 transition focus-within:border-blue-500/40">
             <Search className="h-4 w-4 text-slate-500" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by type or location..."
+              placeholder="Search by type, location or severity..."
               className="w-full bg-transparent text-xs outline-none placeholder:text-slate-600"
             />
           </div>
@@ -205,7 +272,7 @@ export default function IncidentTable({
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`rounded-full border px-3 py-1 text-[11px] transition ${
+                className={`rounded-full border px-3 py-1 text-[11px] transition hover:-translate-y-0.5 ${
                   activeFilter === filter
                     ? "border-blue-500/40 bg-blue-500/10 text-blue-300"
                     : "border-white/10 bg-black/20 text-slate-400 hover:text-white"
@@ -222,8 +289,8 @@ export default function IncidentTable({
             No incidents match this search or filter.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-white/10">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="min-w-[980px] w-full text-left text-xs">
               <thead className="bg-white/[0.03] text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Type</th>
@@ -244,14 +311,16 @@ export default function IncidentTable({
                     incident.casualties
                   );
 
+                  const status = getStatus(incident.id);
+
                   return (
                     <tr
                       key={incident.id}
-                      className="border-t border-white/10 transition hover:bg-white/[0.04]"
+                      className="border-t border-white/10 transition hover:bg-blue-500/[0.06]"
                     >
-                      <td className="px-3 py-2 font-medium">{incident.type}</td>
+                      <td className="px-3 py-2 font-medium">{highlight(incident.type)}</td>
                       <td className="px-3 py-2 text-slate-300">
-                        {incident.location}
+                        {highlight(incident.location)}
                       </td>
                       <td className="px-3 py-2">
                         <SeverityBadge severity={incident.severity} />
@@ -261,14 +330,14 @@ export default function IncidentTable({
                       </td>
                       <td className="px-3 py-2">
                         <select
-                          value={getStatus(incident.id)}
+                          value={status}
                           onChange={(event) =>
                             updateStatus(incident.id, event.target.value)
                           }
-                          className="rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-slate-300 outline-none"
+                          className={`rounded-md border px-2 py-1 text-[11px] outline-none ${statusClass(status)}`}
                         >
-                          {statuses.map((status) => (
-                            <option key={status}>{status}</option>
+                          {statuses.map((item) => (
+                            <option key={item}>{item}</option>
                           ))}
                         </select>
                       </td>
@@ -292,7 +361,7 @@ export default function IncidentTable({
                         </button>
 
                         <button
-                          onClick={() => handleDelete(incident.id)}
+                          onClick={() => setDeleteIncident(incident)}
                           className="rounded-md border border-red-500/20 bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20"
                         >
                           <Trash2 className="inline h-3 w-3" /> Delete
@@ -309,7 +378,7 @@ export default function IncidentTable({
 
       {selectedIncident && (
         <div className="fixed inset-0 z-[90] flex justify-end bg-black/40 backdrop-blur-sm">
-          <div className="h-full w-full max-w-md border-l border-white/10 bg-[#0f172a] p-5 shadow-2xl">
+          <div className="h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-[#0f172a] p-5 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold">Incident Detail</h2>
@@ -340,7 +409,7 @@ export default function IncidentTable({
 
                     <div className="mt-3 flex items-center gap-2">
                       <SeverityBadge severity={selectedIncident.severity} />
-                      <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-slate-400">
+                      <span className={`rounded-full border px-2 py-0.5 text-[11px] ${statusClass(getStatus(selectedIncident.id))}`}>
                         {getStatus(selectedIncident.id)}
                       </span>
                     </div>
@@ -457,7 +526,7 @@ export default function IncidentTable({
               <div>
                 <h2 className="text-sm font-semibold">Edit Incident</h2>
                 <p className="text-xs text-slate-500">
-                  Update severity and impact details.
+                  Update incident details and Supabase record.
                 </p>
               </div>
 
@@ -469,14 +538,21 @@ export default function IncidentTable({
               </button>
             </div>
 
-            <div className="mb-4 rounded-lg border border-white/10 bg-black/30 p-3">
-              <p className="text-xs text-slate-500">Incident</p>
-              <p className="text-sm font-medium">
-                {editingIncident.type} · {editingIncident.location}
-              </p>
-            </div>
-
             <div className="space-y-3">
+              <input
+                value={editType}
+                onChange={(event) => setEditType(event.target.value)}
+                placeholder="Incident type"
+                className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-blue-500/60"
+              />
+
+              <input
+                value={editLocation}
+                onChange={(event) => setEditLocation(event.target.value)}
+                placeholder="Location"
+                className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-blue-500/60"
+              />
+
               <select
                 value={editSeverity}
                 onChange={(event) => setEditSeverity(event.target.value)}
@@ -491,12 +567,14 @@ export default function IncidentTable({
               <input
                 value={editPopulation}
                 onChange={(event) => setEditPopulation(event.target.value)}
+                placeholder="Population affected"
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-blue-500/60"
               />
 
               <input
                 value={editCasualties}
                 onChange={(event) => setEditCasualties(event.target.value)}
+                placeholder="Casualties"
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-blue-500/60"
               />
             </div>
@@ -514,6 +592,41 @@ export default function IncidentTable({
                 className="rounded-lg border border-blue-500/30 bg-blue-500/90 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-400"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteIncident && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-red-500/20 bg-[#0f172a] p-5 shadow-2xl">
+            <div className="mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-300" />
+              <h2 className="text-sm font-semibold">Delete Incident?</h2>
+            </div>
+
+            <p className="text-xs leading-5 text-slate-400">
+              This will permanently delete{" "}
+              <span className="font-semibold text-white">
+                {deleteIncident.type} · {deleteIncident.location}
+              </span>{" "}
+              from Supabase. This action cannot be undone.
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteIncident(null)}
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/10"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={confirmDelete}
+                className="rounded-lg border border-red-500/30 bg-red-500/90 px-3 py-2 text-xs font-semibold text-white hover:bg-red-400"
+              >
+                Delete Incident
               </button>
             </div>
           </div>

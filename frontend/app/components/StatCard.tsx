@@ -6,62 +6,37 @@ type StatCardProps = {
 };
 
 const descriptions: Record<string, string> = {
-  "Active Disasters":
-    "Incidents currently stored and tracked by the platform.",
-  Resources:
-    "Available emergency resources for deployment.",
-  Volunteers:
-    "Registered volunteers available for assignment.",
-  "Relief Centers":
-    "Relief centers available for population support.",
+  "Active Disasters": "Live incidents currently loaded from Supabase.",
+  Resources: "Total available emergency supply count.",
+  Volunteers: "Available volunteer responders.",
+  "Relief Centers": "Configured relief centers ready for assignment.",
 };
 
-export default function StatCard({
-  title,
-  value,
-  icon,
-  accent,
-}: StatCardProps) {
+export default function StatCard({ title, value, icon, accent }: StatCardProps) {
   return (
     <div
-      className={`group relative rounded-xl border border-white/10 bg-white/[0.03] p-4 transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.06] hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] ${accent}`}
+      className={`group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.035] p-4 transition hover:-translate-y-0.5 hover:bg-white/[0.06] ${accent}`}
     >
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-400 group-hover:text-slate-300">
-          {title}
-        </p>
+      <div className="absolute right-0 top-0 h-20 w-20 rounded-full bg-white/[0.04] blur-2xl transition group-hover:bg-blue-500/10" />
 
-        <span className="text-lg opacity-70 transition group-hover:scale-110 group-hover:opacity-100">
+      <div className="relative flex items-start justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            {title}
+          </p>
+
+          <p className="mt-2 text-2xl font-semibold tracking-tight">
+            {value}
+          </p>
+
+          <p className="mt-1 text-[11px] text-slate-500">
+            {descriptions[title]}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-base transition group-hover:border-blue-500/30">
           {icon}
-        </span>
-      </div>
-
-      <p className="mt-3 text-2xl font-bold tracking-tight">
-        {value}
-      </p>
-
-      <div
-        className="
-        pointer-events-none
-        absolute
-        left-4
-        top-full
-        z-50
-        mt-2
-        hidden
-        w-56
-        rounded-lg
-        border
-        border-white/10
-        bg-[#0f172a]
-        p-3
-        text-[11px]
-        text-slate-300
-        shadow-xl
-        group-hover:block
-      "
-      >
-        {descriptions[title]}
+        </div>
       </div>
     </div>
   );

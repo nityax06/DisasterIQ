@@ -1,3 +1,4 @@
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { calculateAllocation } from "../allocation";
 
 type Incident = {
@@ -9,12 +10,20 @@ type Incident = {
   casualties: number;
 };
 
-export default function OperationalKpis({ incidents }: { incidents: Incident[] }) {
+export default function OperationalKpis({
+  incidents,
+}: {
+  incidents: Incident[];
+}) {
   const totalPopulation = incidents.reduce((sum, item) => sum + item.population, 0);
   const totalCasualties = incidents.reduce((sum, item) => sum + item.casualties, 0);
 
   const medicalNeeded = incidents.reduce((sum, item) => {
-    const allocation = calculateAllocation(item.severity, item.population, item.casualties);
+    const allocation = calculateAllocation(
+      item.severity,
+      item.population,
+      item.casualties
+    );
     return sum + allocation.medicalKits;
   }, 0);
 
@@ -22,27 +31,63 @@ export default function OperationalKpis({ incidents }: { incidents: Incident[] }
     (item) => item.severity.toLowerCase() === "critical"
   ).length;
 
+  const cards = [
+    ["Critical", criticalCount, "Command alert", "red", true],
+    ["Population", totalPopulation, "Affected count", "blue", false],
+    ["Medical", medicalNeeded, "Kits estimated", "purple", false],
+    ["Casualties", totalCasualties, "Reported impact", "orange", true],
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-3">
-      <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] p-4">
-        <p className="text-[11px] text-slate-400">Critical Incidents</p>
-        <p className="mt-1 text-2xl font-bold text-red-300">{criticalCount}</p>
-      </div>
+      {cards.map(([label, value, sub, color, rising]) => (
+        <div
+          key={label as string}
+          className="rounded-xl border border-white/10 bg-white/[0.035] p-4 transition hover:-translate-y-0.5 hover:border-blue-500/30 hover:bg-white/[0.06]"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-slate-500">{label}</p>
+              <p className="mt-2 text-2xl font-semibold">{value}</p>
+            </div>
 
-      <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-4">
-        <p className="text-[11px] text-slate-400">Affected Population</p>
-        <p className="mt-1 text-2xl font-bold">{totalPopulation}</p>
-      </div>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                rising
+                  ? "border-red-500/20 bg-red-500/10 text-red-300"
+                  : "border-green-500/20 bg-green-500/10 text-green-300"
+              }`}
+            >
+              {rising ? (
+                <TrendingUp className="inline h-3 w-3" />
+              ) : (
+                <TrendingDown className="inline h-3 w-3" />
+              )}{" "}
+              live
+            </span>
+          </div>
 
-      <div className="rounded-xl border border-purple-500/20 bg-purple-500/[0.06] p-4">
-        <p className="text-[11px] text-slate-400">Medical Kits Needed</p>
-        <p className="mt-1 text-2xl font-bold">{medicalNeeded}</p>
-      </div>
+          <p className="mt-2 text-[11px] text-slate-500">{sub}</p>
 
-      <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.06] p-4">
-        <p className="text-[11px] text-slate-400">Total Casualties</p>
-        <p className="mt-1 text-2xl font-bold text-orange-300">{totalCasualties}</p>
-      </div>
+          <div className="mt-3 flex gap-1">
+            {[30, 60, 45, 80, 55].map((height, index) => (
+              <div
+                key={index}
+                className={`w-full rounded-sm ${
+                  color === "red"
+                    ? "bg-red-400/60"
+                    : color === "blue"
+                    ? "bg-blue-400/60"
+                    : color === "purple"
+                    ? "bg-purple-400/60"
+                    : "bg-orange-400/60"
+                }`}
+                style={{ height: `${height / 4}px` }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

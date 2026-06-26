@@ -1,19 +1,23 @@
 "use client";
 
+import MissionQueue from "./components/MissionQueue";
 import { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
+import jsPDF from "jspdf";
 
 import ResourceChart from "./components/ResourceChart";
 import IncidentChart from "./components/IncidentChart";
+import AnalyticsSummary from "./components/AnalyticsSummary";
 import SystemMetrics from "./components/SystemMetrics";
 import CommandCenter from "./components/CommandCenter";
 import ActionQueue from "./components/ActionQueue";
 import OperationsTimeline from "./components/OperationsTimeline";
-import ToastHost from "./components/ToastHost";
+import ToastHost, { showToast } from "./components/ToastHost";
 import LiveClock from "./components/LiveClock";
 import ReadinessScore from "./components/ReadinessScore";
 import IncidentHeatMap from "./components/IncidentHeatMap";
 import NotificationCenter from "./components/NotificationCenter";
+import NotificationDrawer from "./components/NotificationDrawer";
 import ExportReport from "./components/ExportReport";
 import QuickActions from "./components/QuickActions";
 import ResponsePlaybook from "./components/ResponsePlaybook";
@@ -25,6 +29,8 @@ import KPIBar from "./components/KPIBar";
 import OperationalKpis from "./components/OperationalKpis";
 import IncidentMap from "./components/IncidentMap";
 import StatusWorkflowBoard from "./components/StatusWorkflowBoard";
+import GlobalSearch from "./components/GlobalSearch";
+import ThemeAccentSelector from "./components/ThemeAccentSelector";
 
 import RoutePanel from "./components/RoutePanel";
 import IncidentForm from "./components/IncidentForm";
@@ -42,6 +48,7 @@ import {
   Settings,
   Package,
   Activity,
+  Search,
 } from "lucide-react";
 
 type Incident = {
@@ -61,10 +68,20 @@ const navItems = [
   { icon: Activity, label: "Analytics", view: "analytics" },
 ];
 
+const accentClasses: Record<string, string> = {
+  black: "from-black via-black to-zinc-950",
+  emerald: "from-emerald-950/30 via-black to-black",
+  aubergine: "from-violet-950/30 via-black to-black",
+  crimson: "from-red-950/30 via-black to-black",
+};
+
 export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState("dashboard");
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [accent, setAccent] = useState("black");
+  const [lastUpdated, setLastUpdated] = useState(0);
 
   async function loadIncidents() {
     const { data, error } = await supabase
@@ -78,6 +95,24 @@ export default function Home() {
     }
 
     setIncidents(data || []);
+    setLastUpdated(0);
+  }
+
+  function exportPdf() {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("DisasterIQ Emergency Report", 20, 20);
+
+    doc.setFontSize(11);
+    doc.text(`Active Incidents: ${incidents.length}`, 20, 40);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 50);
+    doc.text("System Status: Operational", 20, 60);
+    doc.text("Database: Supabase Connected", 20, 70);
+    doc.text("Priority Engine: Enabled", 20, 80);
+
+    doc.save("DisasterIQ_Report.pdf");
+    showToast("PDF exported using keyboard shortcut");
   }
 
   useEffect(() => {
@@ -98,13 +133,65 @@ export default function Home() {
       )
       .subscribe();
 
+    const timer = setInterval(() => {
+      setLastUpdated((value) => value + 1);
+    }, 1000);
+
+    function handleShortcuts(event: KeyboardEvent) {
+      if (event.ctrlKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setGlobalSearchOpen(true);
+      }
+
+      if (event.altKey && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        setActiveView("incidents");
+        showToast("New incident page opened");
+      }
+
+      if (event.ctrlKey && event.key.toLowerCase() === "e") {
+        event.preventDefault();
+        exportPdf();
+      }
+    }
+
+    window.addEventListener("keydown", handleShortcuts);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(timer);
+      window.removeEventListener("keydown", handleShortcuts);
+    };
+  }, [incidents.length]);
+
+  useEffect(() => {
+    function openIncidents() {
+      setActiveView("incidents");
+    }
+
+    function openResources() {
+      setActiveView("resources");
+    }
+
+    function openAnalytics() {
+      setActiveView("analytics");
+    }
+
+    window.addEventListener("dashboard-view-incidents", openIncidents);
+    window.addEventListener("dashboard-view-resources", openResources);
+    window.addEventListener("dashboard-view-analytics", openAnalytics);
+
+    return () => {
+      window.removeEventListener("dashboard-view-incidents", openIncidents);
+      window.removeEventListener("dashboard-view-resources", openResources);
+      window.removeEventListener("dashboard-view-analytics", openAnalytics);
     };
   }, []);
 
   return (
-    <main className="h-screen bg-[#05060f] text-white flex overflow-hidden text-sm">
+    <main
+      className={`h-screen bg-gradient-to-br ${accentClasses[accent]} bg-black text-white flex overflow-hidden text-sm`}
+    >
       <aside
         className={`h-screen shrink-0 border-r border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-16"
@@ -140,7 +227,7 @@ export default function Home() {
                 onClick={() => setActiveView(item.view)}
                 className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 transition ${
                   active
-                    ? "bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                    ? "bg-white/[0.08] text-white border border-white/20"
                     : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
@@ -149,24 +236,22 @@ export default function Home() {
                 {sidebarOpen && (
                   <span className="text-sm">{item.label}</span>
                 )}
-
-                {!sidebarOpen && (
-                  <span className="absolute left-14 z-50 hidden rounded-md border border-white/10 bg-black px-3 py-2 text-xs text-white shadow-xl group-hover:block">
-                    {item.label}
-                  </span>
-                )}
               </button>
             );
           })}
         </nav>
 
-        <div className="mt-auto p-3">
+        <div className="mt-auto space-y-3 p-3">
+          {sidebarOpen && (
+            <ThemeAccentSelector accent={accent} setAccent={setAccent} />
+          )}
+
           <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-3">
             {sidebarOpen ? (
               <>
-                <p className="text-[11px] text-slate-400">System Status</p>
+                <p className="text-[11px] text-slate-400">Live Sync</p>
                 <p className="mt-1 text-xs text-green-300">
-                  ● Supabase Connected
+                  ● Updated {lastUpdated}s ago
                 </p>
               </>
             ) : (
@@ -177,9 +262,9 @@ export default function Home() {
       </aside>
 
       <section className="flex-1 h-screen flex flex-col overflow-hidden">
-        <header className="h-14 shrink-0 border-b border-white/10 bg-[#020617]/95 backdrop-blur-xl flex items-center justify-between px-6">
+        <header className="h-14 shrink-0 border-b border-white/10 bg-black/95 backdrop-blur-xl flex items-center justify-between px-6">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-blue-400">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">
               Emergency Operations
             </p>
             <h1 className="text-sm font-semibold">
@@ -188,18 +273,24 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setGlobalSearchOpen(true)}
+              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-slate-300 hover:border-white/30"
+            >
+              <Search className="mr-1 inline h-3 w-3" />
+              Ctrl+F
+            </button>
+
+            <NotificationDrawer />
+
             <LiveClock />
 
             <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-[11px] text-green-300">
               ● Operational
             </span>
 
-            <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-[11px] text-purple-300">
-              ● Supabase
-            </span>
-
-            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] text-blue-300">
-              ● Auto Priority
+            <span className="rounded-full border border-white/20 bg-white/[0.04] px-3 py-1 text-[11px] text-slate-300">
+              ● Updated {lastUpdated}s ago
             </span>
 
             <span className="animate-pulse rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-[11px] text-orange-300">
@@ -211,28 +302,32 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {activeView === "dashboard" && (
             <>
-              <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_40px_rgba(15,23,42,0.35)]">
                 <h2 className="text-xl font-bold">
-                  Disaster<span className="text-blue-400">IQ</span>
+                  Disaster<span className="text-slate-300">IQ</span>
                 </h2>
 
                 <p className="text-xs text-slate-400 max-w-3xl mt-2 leading-5">
                   Intelligent emergency response platform for incident
                   prioritization, resource allocation, volunteer deployment,
-                  relief-center assignment, and route optimization.
+                  relief-center assignment, route optimization, and live
+                  operational decision support.
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {["Next.js", "Supabase", "TypeScript", "Dijkstra", "CRUD"].map(
-                    (tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-slate-300 hover:border-blue-500/40 hover:text-blue-300"
-                      >
-                        {tag}
-                      </span>
-                    )
-                  )}
+                  {[
+                    "Alt+N New Incident",
+                    "Ctrl+F Global Search",
+                    "Ctrl+E Export PDF",
+                    "Supabase Realtime",
+                  ].map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-slate-300 hover:border-white/30 hover:text-white"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </section>
 
@@ -243,34 +338,31 @@ export default function Home() {
                   title="Active Disasters"
                   value={incidents.length.toString()}
                   icon="🌍"
-                  accent="hover:border-red-500/50"
+                  accent="hover:border-white/30"
                 />
                 <StatCard
                   title="Resources"
                   value="5200"
                   icon="📦"
-                  accent="hover:border-blue-500/50"
+                  accent="hover:border-white/30"
                 />
                 <StatCard
                   title="Volunteers"
                   value="90"
                   icon="👥"
-                  accent="hover:border-green-500/50"
+                  accent="hover:border-white/30"
                 />
                 <StatCard
                   title="Relief Centers"
                   value="4"
                   icon="🏥"
-                  accent="hover:border-purple-500/50"
+                  accent="hover:border-white/30"
                 />
               </section>
 
               <OperationalKpis incidents={incidents} />
-
               <CommandCenter incidents={incidents} />
-
               <DashboardIntel incidents={incidents} />
-
               <KPIBar incidents={incidents.length} />
 
               <section className="grid grid-cols-2 gap-3">
@@ -283,10 +375,12 @@ export default function Home() {
                 <StatusWorkflowBoard incidents={incidents} />
               </section>
 
-              <section className="grid grid-cols-3 gap-3">
+              <section className="grid grid-cols-2 gap-3">
                 <NotificationCenter />
-                <ExportReport incidents={incidents.length} />
-                <QuickActions />
+                <div className="space-y-3">
+                  <QuickActions />
+                  <MissionQueue />
+                </div>
               </section>
 
               <section className="grid grid-cols-4 gap-3">
@@ -308,13 +402,23 @@ export default function Home() {
           {activeView === "operations" && (
             <section className="grid grid-cols-3 gap-3">
               <RecommendationPanel incidents={incidents} />
+
               <VolunteerPanel incidents={incidents} />
+
               <ReliefCenterPanel incidents={incidents} />
+
               <RoutePanel incidents={incidents} />
+
               <ResponsePlaybook incidents={incidents} />
+
               <MissionControl />
+
+              <MissionQueue />
+
               <ActionQueue incidents={incidents} />
+
               <OperationsTimeline />
+
               <StatusWorkflowBoard incidents={incidents} />
             </section>
           )}
@@ -327,16 +431,18 @@ export default function Home() {
           )}
 
           {activeView === "analytics" && (
-            <section className="grid grid-cols-2 gap-3">
-              <IncidentChart incidents={incidents} />
-              <ResourceChart />
-              <SystemMetrics />
-              <OperationsTimeline />
-              <WhatIfSimulator />
-              <IncidentHeatMap incidents={incidents} />
-              <IncidentMap incidents={incidents} />
-              <OperationalKpis incidents={incidents} />
-            </section>
+            <>
+              <AnalyticsSummary incidents={incidents} />
+
+              <section className="grid grid-cols-2 gap-3">
+                <IncidentChart incidents={incidents} />
+                <ResourceChart />
+                <SystemMetrics />
+                <IncidentHeatMap incidents={incidents} />
+                <IncidentMap incidents={incidents} />
+                <WhatIfSimulator />
+              </section>
+            </>
           )}
 
           <footer className="border-t border-white/10 pt-4 text-[11px] text-slate-500">
@@ -345,6 +451,15 @@ export default function Home() {
           </footer>
         </div>
       </section>
+
+      <GlobalSearch
+        open={globalSearchOpen}
+        onClose={() => setGlobalSearchOpen(false)}
+        incidents={incidents}
+        setActiveView={setActiveView}
+      />
+
+      <ExportReport incidents={incidents} />
 
       <ToastHost />
     </main>

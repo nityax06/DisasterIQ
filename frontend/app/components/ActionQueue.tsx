@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Circle, Send } from "lucide-react";
 import { calculatePriorityScore } from "../priority";
 import { calculateAllocation } from "../allocation";
+import { showToast } from "./ToastHost";
 
 type Incident = {
   id: number;
@@ -21,6 +22,20 @@ type ActionQueueProps = {
 export default function ActionQueue({ incidents }: ActionQueueProps) {
   const [completed, setCompleted] = useState<string[]>([]);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("disasteriq-action-queue");
+    if (saved) {
+      setCompleted(JSON.parse(saved));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "disasteriq-action-queue",
+      JSON.stringify(completed)
+    );
+  }, [completed]);
+
   const topIncident = [...incidents].sort((a, b) => {
     const scoreA = calculatePriorityScore(a.severity, a.population, a.casualties);
     const scoreB = calculatePriorityScore(b.severity, b.population, b.casualties);
@@ -29,7 +44,7 @@ export default function ActionQueue({ incidents }: ActionQueueProps) {
 
   if (!topIncident) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-blue-500/30 hover:bg-white/[0.05]">
         <h2 className="text-sm font-semibold">Action Queue</h2>
         <p className="mt-2 text-xs text-slate-500">No generated actions.</p>
       </div>
@@ -50,25 +65,29 @@ export default function ActionQueue({ incidents }: ActionQueueProps) {
   ];
 
   function toggleAction(action: string) {
+    const alreadyDone = completed.includes(action);
+
     setCompleted((previous) =>
-      previous.includes(action)
+      alreadyDone
         ? previous.filter((item) => item !== action)
         : [...previous, action]
     );
+
+    showToast(alreadyDone ? "Action reopened" : "Action marked complete");
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-green-500/30 hover:bg-white/[0.05]">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold">Action Queue</h2>
           <p className="text-xs text-slate-500">
-            Interactive response checklist.
+            Persistent response checklist.
           </p>
         </div>
 
         <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-slate-400">
-          {completed.length}/{actions.length} done
+          {completed.filter((item) => actions.includes(item)).length}/{actions.length} done
         </span>
       </div>
 
@@ -80,10 +99,10 @@ export default function ActionQueue({ incidents }: ActionQueueProps) {
             <button
               key={action}
               onClick={() => toggleAction(action)}
-              className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${
+              className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition hover:-translate-y-0.5 ${
                 done
-                  ? "border-green-500/30 bg-green-500/10 text-green-300"
-                  : "border-white/10 bg-black/30 hover:border-blue-500/30"
+                  ? "border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20"
+                  : "border-white/10 bg-black/30 hover:border-blue-500/40 hover:bg-blue-500/10"
               }`}
             >
               <span className="flex items-center gap-2">
