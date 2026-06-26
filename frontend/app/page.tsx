@@ -22,6 +22,9 @@ import WhatIfSimulator from "./components/WhatIfSimulator";
 import DashboardIntel from "./components/DashboardIntel";
 import ActivityFeed from "./components/ActivityFeed";
 import KPIBar from "./components/KPIBar";
+import OperationalKpis from "./components/OperationalKpis";
+import IncidentMap from "./components/IncidentMap";
+import StatusWorkflowBoard from "./components/StatusWorkflowBoard";
 
 import RoutePanel from "./components/RoutePanel";
 import IncidentForm from "./components/IncidentForm";
@@ -262,6 +265,8 @@ export default function Home() {
                 />
               </section>
 
+              <OperationalKpis incidents={incidents} />
+
               <CommandCenter incidents={incidents} />
 
               <DashboardIntel incidents={incidents} />
@@ -271,6 +276,11 @@ export default function Home() {
               <section className="grid grid-cols-2 gap-3">
                 <ReadinessScore />
                 <IncidentHeatMap incidents={incidents} />
+              </section>
+
+              <section className="grid grid-cols-2 gap-3">
+                <IncidentMap incidents={incidents} />
+                <StatusWorkflowBoard incidents={incidents} />
               </section>
 
               <section className="grid grid-cols-3 gap-3">
@@ -305,6 +315,7 @@ export default function Home() {
               <MissionControl />
               <ActionQueue incidents={incidents} />
               <OperationsTimeline />
+              <StatusWorkflowBoard incidents={incidents} />
             </section>
           )}
 
@@ -323,6 +334,8 @@ export default function Home() {
               <OperationsTimeline />
               <WhatIfSimulator />
               <IncidentHeatMap incidents={incidents} />
+              <IncidentMap incidents={incidents} />
+              <OperationalKpis incidents={incidents} />
             </section>
           )}
 
