@@ -1,20 +1,27 @@
 "use client";
-import DashboardIntel from "./components/DashboardIntel";
+
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
+
 import ResourceChart from "./components/ResourceChart";
 import IncidentChart from "./components/IncidentChart";
 import SystemMetrics from "./components/SystemMetrics";
 import CommandCenter from "./components/CommandCenter";
 import ActionQueue from "./components/ActionQueue";
 import OperationsTimeline from "./components/OperationsTimeline";
-import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
-import {
-  BarChart3,
-  AlertTriangle,
-  Settings,
-  Package,
-  Activity,
-} from "lucide-react";
+import ToastHost from "./components/ToastHost";
+import LiveClock from "./components/LiveClock";
+import ReadinessScore from "./components/ReadinessScore";
+import IncidentHeatMap from "./components/IncidentHeatMap";
+import NotificationCenter from "./components/NotificationCenter";
+import ExportReport from "./components/ExportReport";
+import QuickActions from "./components/QuickActions";
+import ResponsePlaybook from "./components/ResponsePlaybook";
+import MissionControl from "./components/MissionControl";
+import WhatIfSimulator from "./components/WhatIfSimulator";
+import DashboardIntel from "./components/DashboardIntel";
+import ActivityFeed from "./components/ActivityFeed";
+import KPIBar from "./components/KPIBar";
 
 import RoutePanel from "./components/RoutePanel";
 import IncidentForm from "./components/IncidentForm";
@@ -25,6 +32,14 @@ import VolunteerPanel from "./components/VolunteerPanel";
 import ReliefCenterPanel from "./components/ReliefCenterPanel";
 import IncidentTable from "./components/IncidentTable";
 import StatCard from "./components/StatCard";
+
+import {
+  BarChart3,
+  AlertTriangle,
+  Settings,
+  Package,
+  Activity,
+} from "lucide-react";
 
 type Incident = {
   id: number;
@@ -64,6 +79,25 @@ export default function Home() {
 
   useEffect(() => {
     loadIncidents();
+
+    const channel = supabase
+      .channel("incidents-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "incidents",
+        },
+        () => {
+          loadIncidents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -151,17 +185,22 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            <LiveClock />
+
             <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-[11px] text-green-300">
               ● Operational
             </span>
+
             <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-[11px] text-purple-300">
               ● Supabase
             </span>
+
             <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] text-blue-300">
               ● Auto Priority
             </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-slate-300">
-              {incidents.length} incidents
+
+            <span className="animate-pulse rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-[11px] text-orange-300">
+              ▲ {incidents.length} Active
             </span>
           </div>
         </header>
@@ -197,18 +236,53 @@ export default function Home() {
               <AlertBanner />
 
               <section className="grid grid-cols-4 gap-3">
-                <StatCard title="Active Disasters" value={incidents.length.toString()} icon="🌍" accent="hover:border-red-500/50" />
-                <StatCard title="Resources" value="5200" icon="📦" accent="hover:border-blue-500/50" />
-                <StatCard title="Volunteers" value="90" icon="👥" accent="hover:border-green-500/50" />
-                <StatCard title="Relief Centers" value="4" icon="🏥" accent="hover:border-purple-500/50" />
+                <StatCard
+                  title="Active Disasters"
+                  value={incidents.length.toString()}
+                  icon="🌍"
+                  accent="hover:border-red-500/50"
+                />
+                <StatCard
+                  title="Resources"
+                  value="5200"
+                  icon="📦"
+                  accent="hover:border-blue-500/50"
+                />
+                <StatCard
+                  title="Volunteers"
+                  value="90"
+                  icon="👥"
+                  accent="hover:border-green-500/50"
+                />
+                <StatCard
+                  title="Relief Centers"
+                  value="4"
+                  icon="🏥"
+                  accent="hover:border-purple-500/50"
+                />
               </section>
 
               <CommandCenter incidents={incidents} />
+
               <DashboardIntel incidents={incidents} />
 
+              <KPIBar incidents={incidents.length} />
+
+              <section className="grid grid-cols-2 gap-3">
+                <ReadinessScore />
+                <IncidentHeatMap incidents={incidents} />
+              </section>
+
               <section className="grid grid-cols-3 gap-3">
+                <NotificationCenter />
+                <ExportReport incidents={incidents.length} />
+                <QuickActions />
+              </section>
+
+              <section className="grid grid-cols-4 gap-3">
                 <SystemMetrics />
                 <ActionQueue incidents={incidents} />
+                <ActivityFeed />
                 <OperationsTimeline />
               </section>
             </>
@@ -222,11 +296,13 @@ export default function Home() {
           )}
 
           {activeView === "operations" && (
-            <section className="grid grid-cols-2 gap-3">
+            <section className="grid grid-cols-3 gap-3">
               <RecommendationPanel incidents={incidents} />
               <VolunteerPanel incidents={incidents} />
               <ReliefCenterPanel incidents={incidents} />
               <RoutePanel incidents={incidents} />
+              <ResponsePlaybook incidents={incidents} />
+              <MissionControl />
               <ActionQueue incidents={incidents} />
               <OperationsTimeline />
             </section>
@@ -245,6 +321,8 @@ export default function Home() {
               <ResourceChart />
               <SystemMetrics />
               <OperationsTimeline />
+              <WhatIfSimulator />
+              <IncidentHeatMap incidents={incidents} />
             </section>
           )}
 
@@ -254,6 +332,8 @@ export default function Home() {
           </footer>
         </div>
       </section>
+
+      <ToastHost />
     </main>
   );
 }

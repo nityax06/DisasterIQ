@@ -4,6 +4,42 @@ import { useState } from "react";
 import { resources } from "../resources";
 import { PackagePlus } from "lucide-react";
 
+function getShortageLevel(gap: number) {
+  if (gap <= 0) {
+    return {
+      label: "Stable",
+      color: "text-green-300",
+      bg: "bg-green-500/10",
+      border: "border-green-500/30",
+    };
+  }
+
+  if (gap < 500) {
+    return {
+      label: "Minor",
+      color: "text-yellow-300",
+      bg: "bg-yellow-500/10",
+      border: "border-yellow-500/30",
+    };
+  }
+
+  if (gap < 1500) {
+    return {
+      label: "Severe",
+      color: "text-orange-300",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/30",
+    };
+  }
+
+  return {
+    label: "Critical",
+    color: "text-red-300",
+    bg: "bg-red-500/10",
+    border: "border-red-500/30",
+  };
+}
+
 export default function ResourcePanel() {
   const [requested, setRequested] = useState<string[]>([]);
 
@@ -19,7 +55,7 @@ export default function ResourcePanel() {
         <div>
           <h2 className="text-sm font-semibold">Resource Summary</h2>
           <p className="text-xs text-slate-500">
-            Monitor shortages and request emergency refill.
+            Monitor shortages, utilization and emergency refill requests.
           </p>
         </div>
 
@@ -33,10 +69,11 @@ export default function ResourcePanel() {
           <thead className="bg-white/[0.03] text-slate-400">
             <tr>
               <th className="px-3 py-2 font-medium">Resource</th>
+              <th className="px-3 py-2 font-medium">Utilization</th>
               <th className="px-3 py-2 font-medium">Available</th>
               <th className="px-3 py-2 font-medium">Required</th>
               <th className="px-3 py-2 font-medium">Gap</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Severity</th>
               <th className="px-3 py-2 font-medium">Action</th>
             </tr>
           </thead>
@@ -46,6 +83,12 @@ export default function ResourcePanel() {
               const gap = resource.required - resource.available;
               const shortage = gap > 0;
               const isRequested = requested.includes(resource.name);
+              const level = getShortageLevel(gap);
+
+              const utilization = Math.min(
+                100,
+                Math.round((resource.available / resource.required) * 100)
+              );
 
               return (
                 <tr
@@ -54,6 +97,27 @@ export default function ResourcePanel() {
                 >
                   <td className="px-3 py-2 font-medium">
                     {resource.name}
+                  </td>
+
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            utilization < 40
+                              ? "bg-red-400"
+                              : utilization < 70
+                              ? "bg-yellow-400"
+                              : "bg-green-400"
+                          }`}
+                          style={{ width: `${utilization}%` }}
+                        />
+                      </div>
+
+                      <span className="text-[11px] text-slate-400">
+                        {utilization}%
+                      </span>
+                    </div>
                   </td>
 
                   <td className="px-3 py-2 text-slate-300">
@@ -74,13 +138,9 @@ export default function ResourcePanel() {
 
                   <td className="px-3 py-2">
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-[11px] ${
-                        shortage
-                          ? "border-red-500/30 bg-red-500/10 text-red-300"
-                          : "border-green-500/30 bg-green-500/10 text-green-300"
-                      }`}
+                      className={`rounded-full border px-2 py-0.5 text-[11px] ${level.border} ${level.bg} ${level.color}`}
                     >
-                      {shortage ? "Shortage" : "Stable"}
+                      {level.label}
                     </span>
                   </td>
 

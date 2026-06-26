@@ -1,6 +1,7 @@
 import { ShieldAlert, FileText, Radio, Wand2 } from "lucide-react";
 import { calculatePriorityScore } from "../priority";
 import { calculateAllocation } from "../allocation";
+import { showToast } from "./ToastHost";
 
 type Incident = {
   id: number;
@@ -43,11 +44,14 @@ export default function CommandCenter({ incidents }: CommandCenterProps) {
     topIncident.casualties
   );
 
+  const confidence = 87;
+
   function copySummary() {
     navigator.clipboard.writeText(
       `DisasterIQ Summary: ${topIncident.type} in ${topIncident.location}. Priority Score: ${score}. Allocate ${allocation.medicalKits} medical kits and ${allocation.volunteers} volunteers.`
     );
-    alert("Command summary copied.");
+
+    showToast("Command summary copied");
   }
 
   return (
@@ -58,25 +62,26 @@ export default function CommandCenter({ incidents }: CommandCenterProps) {
           <h2 className="text-sm font-semibold">Command Center</h2>
         </div>
 
-        <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[11px] text-green-300">
-          Confidence 87%
+        <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+          Risk CRITICAL
         </span>
       </div>
 
       <p className="text-xs text-slate-400">Current Highest Risk</p>
+
       <p className="mt-1 text-lg font-semibold">
         {topIncident.type} · {topIncident.location}
       </p>
 
       <p className="mt-2 text-xs text-slate-400">
-        Recommended action: dispatch medical kits, volunteers, and notify the
-        nearest relief center.
+        Recommended action: dispatch resources, notify responders, and activate
+        relief coordination.
       </p>
 
       <div className="mt-4 grid grid-cols-4 gap-3 text-xs">
         <div className="rounded-lg border border-white/10 bg-black/30 p-3">
           <p className="text-slate-500">Priority</p>
-          <p className="mt-1 text-lg font-bold text-blue-300">{score}</p>
+          <p className="mt-1 text-lg font-bold text-red-300">{score}</p>
         </div>
 
         <div className="rounded-lg border border-white/10 bg-black/30 p-3">
@@ -95,6 +100,20 @@ export default function CommandCenter({ incidents }: CommandCenterProps) {
         </div>
       </div>
 
+      <div className="mt-4 rounded-lg border border-white/10 bg-black/30 p-3">
+        <div className="mb-1 flex justify-between text-[11px] text-slate-400">
+          <span>AI Confidence</span>
+          <span>{confidence}%</span>
+        </div>
+
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-2 rounded-full bg-blue-400"
+            style={{ width: `${confidence}%` }}
+          />
+        </div>
+      </div>
+
       <div className="mt-4 flex gap-2">
         <button
           onClick={copySummary}
@@ -105,7 +124,7 @@ export default function CommandCenter({ incidents }: CommandCenterProps) {
         </button>
 
         <button
-          onClick={() => alert("Response plan generated.")}
+          onClick={() => showToast("Response plan generated")}
           className="flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-300 hover:bg-purple-500/20"
         >
           <Wand2 className="h-3.5 w-3.5" />
@@ -113,7 +132,7 @@ export default function CommandCenter({ incidents }: CommandCenterProps) {
         </button>
 
         <button
-          onClick={() => alert("Emergency broadcast queued.")}
+          onClick={() => showToast("Emergency broadcast queued")}
           className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-300 hover:bg-green-500/20"
         >
           <Radio className="h-3.5 w-3.5" />
